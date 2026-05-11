@@ -23,7 +23,7 @@ Small FastAPI authentication service that issues and validates JSON Web Tokens (
 | `CORS_ORIGINS` | Comma-delimited whitelist for allowed origins | empty list (no browser origins allowed) |
 | `RATE_LIMIT_REQUESTS` | Max requests per client in rate-limit window (`0` disables) | `60` |
 | `RATE_LIMIT_WINDOW_SECONDS` | Rate-limit window duration in seconds | `60` |
-| `JWT_API_URL` | Used by `test_app.py` when pointing at a running instance | `http://127.0.0.1:8000` |
+| `JWT_API_URL` | Used by `smoke_test.py` when pointing at a running instance | `http://127.0.0.1:8000` |
 
 Request body size limit is fixed at `8192` bytes in this service.
 
@@ -199,7 +199,7 @@ python -m pytest tests
 ```
 
 ## Manual smoke test script
-The `test_app.py` script performs end-to-end requests against a running instance. Set `JWT_API_URL` to point at your server (default `http://127.0.0.1:8000`).
+The `smoke_test.py` script performs end-to-end requests against a running instance. Set `JWT_API_URL` to point at your server (default `http://127.0.0.1:8000`).
 ```bash
-python test_app.py
+python smoke_test.py
 ```
