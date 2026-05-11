@@ -1,7 +1,7 @@
 from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
 from threading import Lock
-from typing import Deque, Dict, List, Literal, Optional
+from typing import Deque, Dict, Literal, Optional
 
 import jwt
 import logging
@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 settings = Settings()
 rate_limit_lock = Lock()
 request_windows: Dict[str, Deque[float]] = defaultdict(deque)
-stored_results: List[dict] = []
 
 app = FastAPI(title="fastJWT", version="0.1.0")
 
@@ -130,18 +129,6 @@ class ValidationResponse(BaseModel):
     subject: Optional[str]
 
 
-class ResultSubmission(BaseModel):
-    task_id: str = Field(..., min_length=1, max_length=128)
-    score: float = Field(..., ge=0, le=1_000_000)
-    submitted_at: datetime
-    metadata: Dict[str, str] = Field(default_factory=dict)
-
-
-class SubmissionResponse(BaseModel):
-    status: Literal["stored"]
-    record_id: int
-
-
 @app.post("/generate-key", response_model=TokenResponse)
 async def generate_key(payload: TokenCreateRequest):
     token, expires_at = _create_token(payload.sub)
@@ -155,37 +142,6 @@ async def validate_key(payload: TokenRequest):
     expires_at = decoded.get("exp") if decoded else None
     subject = decoded.get("sub") if decoded else None
     return ValidationResponse(status=status, expires_at=expires_at, subject=subject)
-
-
-def _extract_bearer_token(authorization: Optional[str]) -> Optional[str]:
-    if not authorization:
-        return None
-    scheme, _, token = authorization.partition(" ")
-    if scheme.lower() != "bearer" or not token:
-        return None
-    return token
-
-
-@app.post("/submit-results", response_model=SubmissionResponse)
-async def submit_results(payload: ResultSubmission, request: Request):
-    bearer_token = _extract_bearer_token(request.headers.get("Authorization"))
-    if not bearer_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing or invalid bearer token",
-        )
-
-    status_value, decoded = _validate_token(bearer_token)
-    if status_value != "valid" or not decoded:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Token {status_value}",
-        )
-
-    record = payload.dict()
-    record["subject"] = decoded["sub"]
-    stored_results.append(record)
-    return SubmissionResponse(status="stored", record_id=len(stored_results) - 1)
 
 
 @app.get("/health")

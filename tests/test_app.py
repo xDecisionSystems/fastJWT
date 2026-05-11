@@ -84,33 +84,3 @@ def test_validate_key_wrong_issuer_returns_invalid_status():
     response = client.post("/validate-key", json={"jwt": token})
     assert response.status_code == 200
     assert response.json()["status"] == "invalid"
-
-
-def test_submit_results_stores_payload_for_valid_bearer_token():
-    token = client.post("/generate-key", json={"sub": "user-123"}).json()["jwt"]
-    response = client.post(
-        "/submit-results",
-        headers={"Authorization": f"Bearer {token}"},
-        json={
-            "task_id": "task-1",
-            "score": 92.5,
-            "submitted_at": datetime.utcnow().isoformat(),
-            "metadata": {"source": "web"},
-        },
-    )
-    assert response.status_code == 200
-    assert response.json()["status"] == "stored"
-    assert isinstance(response.json()["record_id"], int)
-
-
-def test_submit_results_without_bearer_token_returns_401():
-    response = client.post(
-        "/submit-results",
-        json={
-            "task_id": "task-1",
-            "score": 92.5,
-            "submitted_at": datetime.utcnow().isoformat(),
-            "metadata": {"source": "web"},
-        },
-    )
-    assert response.status_code == 401

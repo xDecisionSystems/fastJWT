@@ -1,6 +1,6 @@
 # fastJWT
 
-Small FastAPI service that issues and validates JSON Web Tokens (JWTs) with a configurable expiration window and optional CORS filtering.
+Small FastAPI authentication service that issues and validates JSON Web Tokens (JWTs). This app is intended to be consumed by other APIs that perform business logic and database storage.
 
 ## Features
 - Generate HS256-signed JWTs with a configurable expiration window
@@ -56,26 +56,6 @@ Response:
 { "status": "valid", "expires_at": 1700000000, "subject": "user-123" }
 ```
 Invalid or expired tokens still return HTTP 200, but the `status` field is set to `"invalid"` or `"expired"` and `expires_at` is `null`.
-
-### `POST /submit-results`
-Requires `Authorization: Bearer <jwt>`.
-
-Request example:
-```json
-{
-  "task_id": "task-1",
-  "score": 92.5,
-  "submitted_at": "2026-02-13T12:34:56.789012",
-  "metadata": {
-    "source": "web"
-  }
-}
-```
-
-Response:
-```json
-{ "status": "stored", "record_id": 0 }
-```
 
 ### `GET /health`
 Used by readiness checks:
