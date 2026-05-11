@@ -26,11 +26,6 @@ class Settings(BaseSettings):
         default_factory=list,
         description="Origins allowed by CORS (comma-delimited string accepted)",
     )
-    max_request_bytes: int = Field(
-        1_048_576,
-        gt=0,
-        description="Maximum accepted request body size in bytes",
-    )
     rate_limit_requests: int = Field(
         60,
         ge=0,

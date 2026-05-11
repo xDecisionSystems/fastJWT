@@ -21,10 +21,11 @@ Small FastAPI authentication service that issues and validates JSON Web Tokens (
 | `JWT_ISSUER` | Expected and emitted `iss` JWT claim | `fastjwt-api` |
 | `JWT_AUDIENCE` | Expected and emitted `aud` JWT claim | `fastjwt-clients` |
 | `CORS_ORIGINS` | Comma-delimited whitelist for allowed origins | empty list (no browser origins allowed) |
-| `MAX_REQUEST_BYTES` | Maximum accepted HTTP request body size | `1048576` |
 | `RATE_LIMIT_REQUESTS` | Max requests per client in rate-limit window (`0` disables) | `60` |
 | `RATE_LIMIT_WINDOW_SECONDS` | Rate-limit window duration in seconds | `60` |
 | `JWT_API_URL` | Used by `test_app.py` when pointing at a running instance | `http://127.0.0.1:8000` |
+
+Request body size limit is fixed at `8192` bytes in this service.
 
 ## Running locally
 ```bash
@@ -106,6 +107,21 @@ Downstream services can call `POST /validate-key`:
 - `status: "valid"` -> token accepted
 - `status: "invalid"` -> reject with `401`
 - `status: "expired"` -> reject with `401` and ask client to refresh session
+
+### `JWT_ISSUER` and `JWT_AUDIENCE` explained
+`JWT_ISSUER` (`iss` claim): identifies who created the token (your token service).  
+Example: `fastjwt-api`.
+
+`JWT_AUDIENCE` (`aud` claim): identifies who the token is intended for (the consuming API/service).  
+Example: `fastjwt-clients` or `results-api`.
+
+Why they matter:
+- They prevent token confusion/replay across systems.
+- A downstream API should reject tokens if `iss` or `aud` do not match expected values.
+
+In your setup:
+- fastJWT issues tokens with these values.
+- Your external API must validate those same expected values before accepting data.
 
 ### Example environment alignment
 Set these values identically on fastJWT and on downstream validators:

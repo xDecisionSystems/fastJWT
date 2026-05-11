@@ -15,6 +15,8 @@ from .config import Settings
 
 logger = logging.getLogger(__name__)
 
+MAX_REQUEST_BYTES = 8_192
+
 settings = Settings()
 rate_limit_lock = Lock()
 request_windows: Dict[str, Deque[float]] = defaultdict(deque)
@@ -61,7 +63,7 @@ async def enforce_request_size_and_rate_limit(request: Request, call_next):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={"detail": "Invalid content-length header"},
             )
-        if body_size > settings.max_request_bytes:
+        if body_size > MAX_REQUEST_BYTES:
             return JSONResponse(
                 status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
                 content={"detail": "Request body too large"},
