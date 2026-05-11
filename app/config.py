@@ -1,10 +1,13 @@
 from typing import List
 
-from pydantic.v1 import BaseSettings, Field, validator
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """Application configuration read from environment variables."""
+
+    model_config = SettingsConfigDict(env_prefix="", case_sensitive=False)
 
     secret_key: str = Field(..., min_length=32, description="JWT signing key")
     jwt_expiration_minutes: int = Field(
@@ -37,17 +40,8 @@ class Settings(BaseSettings):
         description="Duration of the rate-limit window in seconds",
     )
 
-    class Config:
-        env_prefix = ""
-        case_sensitive = False
-
-        @classmethod
-        def parse_env_var(cls, field_name, raw_val):
-            if field_name == "cors_origins":
-                return raw_val
-            return super().parse_env_var(field_name, raw_val)
-
-    @validator("cors_origins", pre=True)
+    @field_validator("cors_origins", mode="before")
+    @classmethod
     def _split_origins(cls, value):
         if isinstance(value, str):
             origins = [origin.strip() for origin in value.split(",")]

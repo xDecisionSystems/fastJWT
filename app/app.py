@@ -54,22 +54,18 @@ def _enforce_rate_limit(client_key: str) -> None:
 @app.middleware("http")
 async def enforce_request_size_and_rate_limit(request: Request, call_next):
     """Apply request-size and request-rate protections to API requests."""
-    content_length = request.headers.get("content-length")
-    if content_length:
-        try:
-            body_size = int(content_length)
-        except ValueError:
-            return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                content={"detail": "Invalid content-length header"},
-            )
-        if body_size > MAX_REQUEST_BYTES:
-            return JSONResponse(
-                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                content={"detail": "Request body too large"},
-            )
+    body = await request.body()
+    if len(body) > MAX_REQUEST_BYTES:
+        return JSONResponse(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            content={"detail": "Request body too large"},
+        )
 
-    client_host = request.client.host if request.client else "unknown"
+    if request.client is None:
+        logger.warning("Request received with no identifiable client address; rate-limiting under 'unknown'")
+        client_host = "unknown"
+    else:
+        client_host = request.client.host
     try:
         _enforce_rate_limit(client_host)
     except HTTPException as exc:
@@ -140,10 +136,10 @@ async def generate_key(payload: TokenCreateRequest):
 
 @app.post("/validate-key", response_model=ValidationResponse)
 async def validate_key(payload: TokenRequest):
-    status, decoded = _validate_token(payload.jwt)
+    token_status, decoded = _validate_token(payload.jwt)
     expires_at = decoded.get("exp") if decoded else None
     subject = decoded.get("sub") if decoded else None
-    return ValidationResponse(status=status, expires_at=expires_at, subject=subject)
+    return ValidationResponse(status=token_status, expires_at=expires_at, subject=subject)
 
 
 @app.get("/health")

@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import jwt
 from fastapi.testclient import TestClient
@@ -43,7 +43,7 @@ def test_validate_key_missing_token_errors():
 
 
 def test_validate_key_invalid_jwt_returns_invalid_status():
-    response = client.post("/validate-key", json={"jwt": "not-a-token"})
+    response = client.post("/validate-key", json={"jwt": "this-is-not-a-valid-jwt-token"})
     assert response.status_code == 200
     assert response.json()["status"] == "invalid"
     assert response.json()["expires_at"] is None
@@ -56,8 +56,8 @@ def test_validate_key_expired_jwt_returns_expired_status():
             "iss": os.environ["JWT_ISSUER"],
             "aud": os.environ["JWT_AUDIENCE"],
             "sub": "user-123",
-            "exp": datetime.utcnow() - timedelta(minutes=5),
-            "iat": datetime.utcnow(),
+            "exp": datetime.now(timezone.utc) - timedelta(minutes=5),
+            "iat": datetime.now(timezone.utc),
         },
         os.environ["SECRET_KEY"],
         algorithm="HS256",
@@ -75,8 +75,8 @@ def test_validate_key_wrong_issuer_returns_invalid_status():
             "iss": "unexpected-issuer",
             "aud": os.environ["JWT_AUDIENCE"],
             "sub": "user-123",
-            "exp": datetime.utcnow() + timedelta(minutes=10),
-            "iat": datetime.utcnow(),
+            "exp": datetime.now(timezone.utc) + timedelta(minutes=10),
+            "iat": datetime.now(timezone.utc),
         },
         os.environ["SECRET_KEY"],
         algorithm="HS256",

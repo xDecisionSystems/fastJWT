@@ -17,6 +17,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Expose the port that FastAPI will run on
 EXPOSE 8000
 
+# Run as non-root user
+RUN adduser --disabled-password --gecos "" appuser
+USER appuser
+
 # Command to run the FastAPI application using Uvicorn
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
 
