@@ -63,6 +63,56 @@ Used by readiness checks:
 { "status": "ok" }
 ```
 
+## Integration guide (React + external API)
+Use this section as the source-of-truth contract when generating code with Codex/Claude.
+
+### Architecture
+1. React app authenticates the user with your backend.
+2. Your backend (trusted server) requests a JWT from fastJWT using `POST /generate-key`.
+3. React calls your external business API with `Authorization: Bearer <jwt>`.
+4. External API validates JWT claims and signature before accepting/storing data.
+
+### Rules for coding agents
+- Do not call `POST /generate-key` directly from browser code.
+- Do not expose `SECRET_KEY` in frontend code.
+- Use HTTPS for all production traffic.
+- Treat fastJWT as auth-only; business data is handled by another API.
+
+### fastJWT token minting request
+```http
+POST /generate-key
+Content-Type: application/json
+
+{ "sub": "user-123" }
+```
+
+### Token usage from clients
+```http
+Authorization: Bearer <jwt>
+```
+
+### Validation contract for downstream APIs
+Downstream APIs must validate all of the following:
+- Algorithm: `HS256`
+- Signature key: same `SECRET_KEY` used by fastJWT
+- `iss` equals `JWT_ISSUER`
+- `aud` equals `JWT_AUDIENCE`
+- `sub` exists and maps to an allowed principal
+- `exp` is not expired
+- `iat` is present and reasonable for your tolerance window
+
+### Optional introspection via fastJWT
+Downstream services can call `POST /validate-key`:
+- `status: "valid"` -> token accepted
+- `status: "invalid"` -> reject with `401`
+- `status: "expired"` -> reject with `401` and ask client to refresh session
+
+### Example environment alignment
+Set these values identically on fastJWT and on downstream validators:
+- `SECRET_KEY`
+- `JWT_ISSUER`
+- `JWT_AUDIENCE`
+
 ## Docker
 Build and run with:
 ```bash
