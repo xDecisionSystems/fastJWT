@@ -2,10 +2,7 @@ version: "3.9"
 
 services:
   fastjwt:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: fastjwt:local
+    image: adclab/fastjwt:latest
     container_name: fastjwt
     ports:
       - "8000:8000"

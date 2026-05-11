@@ -135,15 +135,60 @@ Build and run with:
 docker build -t fastjwt .
 docker run --env-file .env -p 8000:8000 fastjwt
 ```
-Example `docker-compose.yml` snippet:
+
+Example `docker-compose.yml` using Docker Hub image (`adclab/fastjwt`):
 ```yaml
-version: '3.9'
+version: "3.9"
 services:
   fastjwt:
-    build: .
+    image: adclab/fastjwt:latest
+    container_name: fastjwt
     ports:
       - "8000:8000"
-    env_file: .env
+    environment:
+      SECRET_KEY: "replace-with-a-long-random-secret-at-least-32-chars"
+      JWT_EXPIRATION_MINUTES: "20"
+      JWT_ISSUER: "fastjwt-api"
+      JWT_AUDIENCE: "fastjwt-clients"
+      CORS_ORIGINS: "http://localhost:3000,https://example.com,https://www.wikipedia.org"
+      RATE_LIMIT_REQUESTS: "60"
+      RATE_LIMIT_WINDOW_SECONDS: "60"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health').read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+```
+
+Alternative `docker-compose.yml` that builds from local source:
+```yaml
+version: "3.9"
+services:
+  fastjwt:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: fastjwt:local
+    container_name: fastjwt
+    ports:
+      - "8000:8000"
+    environment:
+      SECRET_KEY: "replace-with-a-long-random-secret-at-least-32-chars"
+      JWT_EXPIRATION_MINUTES: "20"
+      JWT_ISSUER: "fastjwt-api"
+      JWT_AUDIENCE: "fastjwt-clients"
+      CORS_ORIGINS: "http://localhost:3000,https://example.com,https://www.wikipedia.org"
+      RATE_LIMIT_REQUESTS: "60"
+      RATE_LIMIT_WINDOW_SECONDS: "60"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health').read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 ```
 
 ## Testing
