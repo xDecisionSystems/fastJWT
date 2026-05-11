@@ -2,7 +2,7 @@
 
 # Set variables here
 REPO="adclab/fastjwt"
-VERSION="v0.4"
+VERSION="v0.5"
 
 # Build image with both tags
 docker build \
